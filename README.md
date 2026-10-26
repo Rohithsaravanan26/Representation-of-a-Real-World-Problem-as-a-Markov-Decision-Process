@@ -278,8 +278,8 @@ The following Python program represents the MDP using dictionaries. It defines t
 # Representation of a Real-World Problem as a Markov Decision Process
 # Problem: Autonomous Lunar Rover
 
-print("Name: Sri Bala Kumaran R")
-print("Register Number: YOUR_REGISTER_NUMBER")
+print("Name: S Rohith")
+print("Register Number: 212225240121")
 print()
 
 # 1. State Space
