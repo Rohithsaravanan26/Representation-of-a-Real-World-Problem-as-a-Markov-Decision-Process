@@ -6,13 +6,13 @@ To model an autonomous lunar rover exploring and mapping the Moon's surface as a
 
 ## Problem Statement
 
-An autonomous lunar rover is deployed on the Moon to explore and map unknown terrain. The rover must navigate across the lunar surface, avoid craters and hazardous regions, conserve battery power, and collect mapping data efficiently.
+An autonomous lunar rover is deployed on the Moon to explore and map unknown terrain. The rover must navigate the lunar surface, scan unexplored areas, and return safely to its base.
 
-The rover uses reinforcement learning to select actions that maximize the area explored while minimizing energy consumption and the risk of entering dangerous terrain. The problem is represented as an MDP to model sequential decision-making under uncertainty.
+The problem is represented as an MDP to model sequential decision-making under uncertainty. The objective is to maximize the reward obtained from exploring and mapping the Moon's surface.
 
 ### Problem Description
 
-A lunar rover is designed to explore and map the surface of the Moon autonomously. The rover must navigate through different terrains, scan unexplored areas, avoid hazardous regions, and manage its limited battery power. The problem is modeled as a Markov Decision Process (MDP), where the rover selects actions based on its current position, terrain conditions, battery level, and mapping status. Each action leads to a possible new state and provides a reward or penalty. The objective is to find an optimal policy that maximizes the total reward by mapping as much of the Moon's surface as possible while avoiding hazards and returning safely to its base.
+A lunar rover is designed to explore and map the Moon's surface autonomously. It moves to unexplored terrain, scans the region to collect mapping data, and returns safely after completing its exploration. The MDP represents the rover's possible states, available actions, transition probabilities, and rewards.
 
 ## MDP Components
 
@@ -36,18 +36,13 @@ Where:
 
 ## State Space
 
-The state space represents all possible situations in which the lunar rover can exist during its mission. Each state describes the rover's location, terrain condition, mapping status, and battery condition.
-
-For simplicity, the following discrete states are considered:
+The state space represents the possible situations of the lunar rover.
 
 ```text
 S = {
-    S0: Rover at base with full battery,
-    S1: Rover in safe unexplored terrain,
-    S2: Rover in safe explored terrain,
-    S3: Rover in hazardous terrain,
-    S4: Rover has returned safely to base,
-    S5: Mission failed due to battery depletion or severe hazard
+    S0: Rover at base,
+    S1: Exploring unexplored terrain,
+    S2: Mission completed
 }
 ```
 
@@ -55,14 +50,9 @@ S = {
 
 | State | Description |
 |---|---|
-| S0 | The rover is at its base and ready to explore. |
-| S1 | The rover is exploring safe, unmapped terrain. |
-| S2 | The rover is in terrain that has already been mapped. |
-| S3 | The rover has entered a hazardous region. |
-| S4 | The rover has completed the mission and returned safely to base. |
-| S5 | The mission has failed due to battery depletion or a severe hazard. |
-
-States \(S4\) and \(S5\) are terminal states, meaning the mission ends when either state is reached.
+| S0 | The rover is at its base, ready to explore. |
+| S1 | The rover is exploring unexplored terrain. |
+| S2 | The rover has completed its mission and returned safely. |
 
 ---
 
@@ -71,39 +61,27 @@ States \(S4\) and \(S5\) are terminal states, meaning the mission ends when eith
 A sample state is:
 
 ```text
-S1 = Rover in safe unexplored terrain
+S1 = Exploring unexplored terrain
 ```
 
-In this state, the rover is away from its base, has sufficient battery power, and is positioned in an unexplored area. It can scan the terrain to collect mapping data, move to another location, or return to base.
-
-Example state representation using a dictionary:
+In this state, the rover can scan the terrain to collect mapping data or return to its base.
 
 ```python
-sample_state = {
-    "position": "unexplored_region",
-    "terrain": "safe",
-    "mapping_status": "unmapped",
-    "battery": "sufficient"
-}
-
-print(sample_state)
+sample_state = "S1"
+print("Sample State:", sample_state)
 ```
 
 ---
 
 ## Action Space
 
-The action space defines all possible actions the rover can perform during its mission.
+The action space defines the actions available to the rover.
 
 ```text
 A = {
-    A0: Move East,
-    A1: Move West,
-    A2: Move North,
-    A3: Move South,
-    A4: Scan Terrain,
-    A5: Return to Base,
-    A6: Recharge Battery
+    A0: Move,
+    A1: Scan,
+    A2: Return
 }
 ```
 
@@ -111,15 +89,9 @@ A = {
 
 | Action | Description |
 |---|---|
-| A0 | Move east to a neighboring region. |
-| A1 | Move west to a neighboring region. |
-| A2 | Move north to a neighboring region. |
-| A3 | Move south to a neighboring region. |
-| A4 | Scan the current region and collect mapping data. |
-| A5 | Navigate toward the base for safe return. |
-| A6 | Recharge the battery when the rover is at a charging base. |
-
-The rover chooses an action based on its current state and the expected reward.
+| A0 | Move to unexplored terrain. |
+| A1 | Scan the terrain and collect mapping data. |
+| A2 | Return safely to base. |
 
 ---
 
@@ -128,16 +100,14 @@ The rover chooses an action based on its current state and the expected reward.
 A sample action is:
 
 ```text
-A4 = Scan Terrain
+A1 = Scan
 ```
 
-When the rover selects this action in an unexplored and safe region, it attempts to collect surface data and update the mapping status.
-
-Example:
+The rover scans the current terrain to collect mapping data.
 
 ```python
 current_state = "S1"
-action = "Scan Terrain"
+action = "Scan"
 
 print("Current State:", current_state)
 print("Selected Action:", action)
@@ -147,7 +117,7 @@ print("Selected Action:", action)
 
 ## Transition Probability
 
-The transition probability describes the likelihood of moving from one state to another after an action is performed.
+The transition probability describes the probability of moving from one state to another after an action is performed.
 
 The general form is:
 
@@ -161,39 +131,30 @@ Where:
 - \(a\) is the selected action.
 - \(s'\) is the next state.
 
-For example, when the rover moves east from the base, it may reach safe unexplored terrain or encounter a hazardous region.
-
-The following probabilities are illustrative assumptions for this simplified model, not measured lunar mission data.
+### Transition Table
 
 | Current State | Action | Next State | Probability |
 |---|---|---|---:|
-| S0 | Move East | S1 | 0.80 |
-| S0 | Move East | S3 | 0.20 |
-| S1 | Scan Terrain | S2 | 0.90 |
-| S1 | Scan Terrain | S1 | 0.10 |
-| S1 | Move East | S1 | 0.70 |
-| S1 | Move East | S3 | 0.20 |
-| S1 | Move East | S5 | 0.10 |
-| S2 | Return to Base | S4 | 0.90 |
-| S2 | Return to Base | S3 | 0.10 |
-| S3 | Return to Base | S4 | 0.60 |
-| S3 | Return to Base | S5 | 0.40 |
+| S0 | Move | S1 | 1.0 |
+| S1 | Scan | S1 | 0.2 |
+| S1 | Scan | S2 | 0.8 |
+| S1 | Return | S2 | 1.0 |
 
-For each current state and action, the probabilities of all possible next states must sum to 1.
+The probabilities for each state-action pair sum to 1.
 
 For example:
 
 $$
-P(S1 \mid S0,\text{Move East}) = 0.80
+P(S2 \mid S1,\text{Scan}) = 0.8
 $$
 
-This means there is an assumed 80% probability that the rover will move from the base to safe unexplored terrain when it chooses to move east.
+This means that scanning the unexplored terrain has an assumed 80% probability of completing the mission in this simplified model.
 
 ---
 
 ## Reward Function
 
-The reward function provides feedback to the rover for its actions and the resulting state. Positive rewards encourage useful behavior, while negative rewards discourage dangerous or inefficient actions.
+The reward function defines the feedback received by the rover after taking an action.
 
 The general form is:
 
@@ -203,180 +164,89 @@ $$
 
 ### Reward Table
 
-| Situation | Reward |
-|---|---:|
-| Successfully scan unexplored terrain | +20 |
-| Move into safe unexplored terrain | +10 |
-| Move through already mapped terrain | +2 |
-| Successfully return to base | +30 |
-| Consume battery power | -2 |
-| Enter hazardous terrain | -15 |
-| Mission failure | -100 |
+| Current State | Action | Next State | Reward |
+|---|---|---|---:|
+| S0 | Move | S1 | +5 |
+| S1 | Scan | S1 | -1 |
+| S1 | Scan | S2 | +10 |
+| S1 | Return | S2 | +5 |
 
-These reward values are illustrative and can be adjusted during reinforcement-learning experiments.
+Positive rewards encourage exploration and mission completion. A negative reward represents the cost of an unsuccessful scan.
 
-The objective is to maximize the expected cumulative discounted reward:
+The objective is to maximize the cumulative discounted reward:
 
 $$
-G_t = \sum_{k=0}^{\infty} \gamma^k R_{t+k+1}
+G_t = \sum_{k=0}^{\infty}\gamma^k R_{t+k+1}
 $$
 
-Where \(\gamma\) is the discount factor, with:
+The discount factor is:
 
 $$
-0 \leq \gamma \leq 1
+\gamma = 0.9
 $$
-
-A discount factor closer to 1 gives more importance to future rewards.
 
 ---
 
 ## Graphical Representation
 
-The following diagram illustrates the simplified MDP and its possible transitions.
-
 ```mermaid
 flowchart TD
     S0["S0: Rover at Base"]
-    S1["S1: Safe Unexplored Terrain"]
-    S2["S2: Safe Explored Terrain"]
-    S3["S3: Hazardous Terrain"]
-    S4["S4: Safe Mission Completion"]
-    S5["S5: Mission Failure"]
+    S1["S1: Exploring Terrain"]
+    S2["S2: Mission Completed"]
 
-    S0 -->|"Move East: 0.80"| S1
-    S0 -->|"Move East: 0.20"| S3
-
-    S1 -->|"Scan: 0.90"| S2
-    S1 -->|"Scan: 0.10"| S1
-
-    S1 -->|"Move East: 0.20"| S3
-    S1 -->|"Move East: 0.10"| S5
-
-    S2 -->|"Return: 0.90"| S4
-    S2 -->|"Return: 0.10"| S3
-
-    S3 -->|"Return: 0.60"| S4
-    S3 -->|"Return: 0.40"| S5
+    S0 -->|"Move, P=1.0, R=+5"| S1
+    S1 -->|"Scan, P=0.2, R=-1"| S1
+    S1 -->|"Scan, P=0.8, R=+10"| S2
+    S1 -->|"Return, P=1.0, R=+5"| S2
 ```
-
-**Interpretation:**
-
-- Each node represents a state of the lunar rover.
-- Each arrow represents a possible state transition caused by an action.
-- The probability labels indicate the likelihood of the corresponding transition.
-- Rewards are assigned to transitions according to the reward function.
-- \(S4\) and \(S5\) represent terminal states.
 
 ---
 
 ## Python Representation
 
-The following Python program represents the MDP using dictionaries. It defines the state space, action space, transition probabilities, reward function, and discount factor.
+The following Python program represents the MDP using dictionaries.
 
 ```python
-# Representation of a Real-World Problem as a Markov Decision Process
-# Problem: Autonomous Lunar Rover
+# Representation of a Real-World Problem as an MDP
+# Problem: Lunar Rover Exploration
 
-print("Name: S Rohith")
+print("Name: ROHITH")
 print("Register Number: 212225240121")
 print()
 
 # 1. State Space
 states = {
-    "S0": "Rover at base with full battery",
-    "S1": "Safe unexplored terrain",
-    "S2": "Safe explored terrain",
-    "S3": "Hazardous terrain",
-    "S4": "Mission completed; rover returned safely",
-    "S5": "Mission failed"
+    "S0": "Rover at Base",
+    "S1": "Exploring Unexplored Terrain",
+    "S2": "Mission Completed"
 }
 
 # 2. Action Space
 actions = {
-    "A0": "Move East",
-    "A1": "Scan Terrain",
-    "A2": "Return to Base",
-    "A3": "Recharge Battery"
+    "A0": "Move",
+    "A1": "Scan",
+    "A2": "Return"
 }
 
-# 3. Transition Probability Function
-# Format: current_state -> action -> [(next_state, probability)]
-
+# 3. Transition Probabilities
 transitions = {
     "S0": {
-        "Move East": [
-            ("S1", 0.80),
-            ("S3", 0.20)
-        ]
+        "Move": [("S1", 1.0)]
     },
-
     "S1": {
-        "Scan Terrain": [
-            ("S2", 0.90),
-            ("S1", 0.10)
-        ],
-        "Move East": [
-            ("S1", 0.70),
-            ("S3", 0.20),
-            ("S5", 0.10)
-        ],
-        "Return to Base": [
-            ("S4", 0.90),
-            ("S3", 0.10)
-        ]
+        "Scan": [("S1", 0.2), ("S2", 0.8)],
+        "Return": [("S2", 1.0)]
     },
-
-    "S2": {
-        "Return to Base": [
-            ("S4", 0.90),
-            ("S3", 0.10)
-        ],
-        "Move East": [
-            ("S2", 0.80),
-            ("S3", 0.15),
-            ("S5", 0.05)
-        ]
-    },
-
-    "S3": {
-        "Return to Base": [
-            ("S4", 0.60),
-            ("S5", 0.40)
-        ]
-    },
-
-    # Terminal states have no outgoing actions.
-    "S4": {},
-    "S5": {}
+    "S2": {}
 }
 
 # 4. Reward Function
-# Format: (current_state, action, next_state): reward
-
 rewards = {
-    ("S0", "Move East", "S1"): 10,
-    ("S0", "Move East", "S3"): -15,
-
-    ("S1", "Scan Terrain", "S2"): 20,
-    ("S1", "Scan Terrain", "S1"): -2,
-
-    ("S1", "Move East", "S1"): 10,
-    ("S1", "Move East", "S3"): -15,
-    ("S1", "Move East", "S5"): -100,
-
-    ("S1", "Return to Base", "S4"): 30,
-    ("S1", "Return to Base", "S3"): -15,
-
-    ("S2", "Return to Base", "S4"): 30,
-    ("S2", "Return to Base", "S3"): -15,
-
-    ("S2", "Move East", "S2"): 2,
-    ("S2", "Move East", "S3"): -15,
-    ("S2", "Move East", "S5"): -100,
-
-    ("S3", "Return to Base", "S4"): 30,
-    ("S3", "Return to Base", "S5"): -100
+    ("S0", "Move", "S1"): 5,
+    ("S1", "Scan", "S1"): -1,
+    ("S1", "Scan", "S2"): 10,
+    ("S1", "Return", "S2"): 5
 }
 
 # 5. Discount Factor
@@ -403,14 +273,12 @@ for action, description in actions.items():
     print(action, ":", description)
 
 print("\nTransition Probabilities:")
-for current_state, action_data in transitions.items():
+for state, action_data in transitions.items():
     for action, outcomes in action_data.items():
         for next_state, probability in outcomes:
             print(
-                current_state,
-                "--", action, "-->",
-                next_state,
-                "| Probability:", probability
+                state, "--", action, "-->",
+                next_state, "| Probability:", probability
             )
 
 print("\nReward Function:")
@@ -419,13 +287,14 @@ for transition, reward in rewards.items():
 
 print("\nDiscount Factor:", gamma)
 
-# 8. Sample Transition and Reward
+# 8. Sample Action
 current_state = "S1"
-selected_action = "Scan Terrain"
+selected_action = "Scan"
 
 print("\nSample State:", current_state)
 print("Selected Action:", selected_action)
-print("Possible Outcomes:", transitions[current_state][selected_action])
+print("Possible Outcomes:",
+      transitions[current_state][selected_action])
 
 print("\nMDP representation created successfully.")
 ```
@@ -434,52 +303,45 @@ print("\nMDP representation created successfully.")
 
 ## Output
 
-The output will display the state space, action space, transition probabilities, reward function, discount factor, and a sample action.
-
 ```text
-Name: S Rohith
+Name: ROHITH S
 Register Number: 212225240121
 
 === LUNAR ROVER MDP ===
 
 State Space:
-S0 : Rover at base with full battery
-S1 : Safe unexplored terrain
-S2 : Safe explored terrain
-S3 : Hazardous terrain
-S4 : Mission completed; rover returned safely
-S5 : Mission failed
+S0 : Rover at Base
+S1 : Exploring Unexplored Terrain
+S2 : Mission Completed
 
 Action Space:
-A0 : Move East
-A1 : Scan Terrain
-A2 : Return to Base
-A3 : Recharge Battery
+A0 : Move
+A1 : Scan
+A2 : Return
 
 Transition Probabilities:
-S0 -- Move East --> S1 | Probability: 0.8
-S0 -- Move East --> S3 | Probability: 0.2
-S1 -- Scan Terrain --> S2 | Probability: 0.9
-S1 -- Scan Terrain --> S1 | Probability: 0.1
-S1 -- Move East --> S1 | Probability: 0.7
-S1 -- Move East --> S3 | Probability: 0.2
-S1 -- Move East --> S5 | Probability: 0.1
-...
+S0 -- Move --> S1 | Probability: 1.0
+S1 -- Scan --> S1 | Probability: 0.2
+S1 -- Scan --> S2 | Probability: 0.8
+S1 -- Return --> S2 | Probability: 1.0
+
+Reward Function:
+('S0', 'Move', 'S1') : 5
+('S1', 'Scan', 'S1') : -1
+('S1', 'Scan', 'S2') : 10
+('S1', 'Return', 'S2') : 5
+
 Discount Factor: 0.9
 
 Sample State: S1
-Selected Action: Scan Terrain
-Possible Outcomes: [('S2', 0.9), ('S1', 0.1)]
+Selected Action: Scan
+Possible Outcomes: [('S1', 0.2), ('S2', 0.8)]
 
 MDP representation created successfully.
 ```
-
-*The output above is abbreviated. The program prints all defined transitions and rewards; the exact register number depends on the value entered in the code.*
 
 ---
 
 ## Result
 
-The autonomous lunar rover exploration problem was successfully modeled as a Markov Decision Process using Python dictionaries. The state space, action space, transition probabilities, reward function, and discount factor were defined. The model demonstrates how an autonomous rover can make sequential decisions under uncertainty while exploring unknown lunar terrain, avoiding hazards, conserving resources, and returning safely to its base.
-
-The MDP representation can serve as a foundation for implementing reinforcement-learning algorithms such as Value Iteration, Policy Iteration, or Q-Learning to determine an optimal exploration policy.
+The lunar rover exploration problem was successfully represented as a Markov Decision Process using Python dictionaries. The model contains three states, three actions, four transitions, a reward function, and a discount factor. This simplified MDP demonstrates how the rover can explore terrain, collect mapping data, and complete its mission.
