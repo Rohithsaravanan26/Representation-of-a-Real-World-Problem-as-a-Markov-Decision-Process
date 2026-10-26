@@ -148,7 +148,7 @@ $$
 P(S2 \mid S1,\text{Scan}) = 0.8
 $$
 
-This means that scanning the unexplored terrain has an assumed 80% probability of completing the mission in this simplified model.
+This means that scanning unexplored terrain has an assumed 80% probability of transitioning to the mission-completed state in this simplified model.
 
 ---
 
@@ -205,143 +205,169 @@ flowchart TD
 
 ## Python Representation
 
-The following Python program represents the MDP using dictionaries.
+The following Python program represents the MDP using dictionaries. Each transition uses the tuple format:
+
+`(probability, next_state, reward, terminated)`
 
 ```python
 # Representation of a Real-World Problem as an MDP
 # Problem: Lunar Rover Exploration
 
-print("Name: ROHITH")
+print("Name: ROHITH S")
 print("Register Number: 212225240121")
 print()
 
 # 1. State Space
 states = {
-    "S0": "Rover at Base",
-    "S1": "Exploring Unexplored Terrain",
-    "S2": "Mission Completed"
+    0: "Rover at Base",
+    1: "Exploring Unexplored Terrain",
+    2: "Mission Completed"
 }
 
 # 2. Action Space
 actions = {
-    "A0": "Move",
-    "A1": "Scan",
-    "A2": "Return"
+    0: "Move",
+    1: "Scan",
+    2: "Return"
 }
 
-# 3. Transition Probabilities
-transitions = {
-    "S0": {
-        "Move": [("S1", 1.0)]
+# 3. Transition Probability, Reward, and Termination
+# Format: (probability, next_state, reward, terminated)
+
+P = {
+    0: {
+        0: [(1.0, 1, 5, False)],
+        1: [(1.0, 1, 0, False)],
+        2: [(1.0, 2, 5, True)]
     },
-    "S1": {
-        "Scan": [("S1", 0.2), ("S2", 0.8)],
-        "Return": [("S2", 1.0)]
+
+    1: {
+        0: [
+            (0.8, 1, 5, False),
+            (0.2, 2, 10, True)
+        ],
+        1: [
+            (0.2, 1, -1, False),
+            (0.8, 2, 10, True)
+        ],
+        2: [
+            (1.0, 2, 5, True)
+        ]
     },
-    "S2": {}
+
+    2: {
+        0: [(1.0, 2, 0, True)],
+        1: [(1.0, 2, 0, True)],
+        2: [(1.0, 2, 0, True)]
+    }
 }
 
-# 4. Reward Function
-rewards = {
-    ("S0", "Move", "S1"): 5,
-    ("S1", "Scan", "S1"): -1,
-    ("S1", "Scan", "S2"): 10,
-    ("S1", "Return", "S2"): 5
-}
-
-# 5. Discount Factor
+# 4. Discount Factor
 gamma = 0.9
 
-# 6. MDP Representation
+# 5. MDP Representation
 mdp = {
     "states": states,
     "actions": actions,
-    "transitions": transitions,
-    "rewards": rewards,
+    "P": P,
     "gamma": gamma
 }
 
-# 7. Display MDP Components
-print("=== LUNAR ROVER MDP ===")
+# 6. Display MDP Dictionary
+print("=== MDP DICTIONARY ===")
+print("P =", P)
 
-print("\nState Space:")
-for state, description in states.items():
-    print(state, ":", description)
+# 7. Display All Transition Details
+print("\n=== TRANSITION DETAILS ===")
 
-print("\nAction Space:")
-for action, description in actions.items():
-    print(action, ":", description)
-
-print("\nTransition Probabilities:")
-for state, action_data in transitions.items():
+for state, action_data in P.items():
     for action, outcomes in action_data.items():
-        for next_state, probability in outcomes:
-            print(
-                state, "--", action, "-->",
-                next_state, "| Probability:", probability
-            )
+        for probability, next_state, reward, terminated in outcomes:
+            print("Current State:", state, "-", states[state])
+            print("Action:", action, "-", actions[action])
+            print("Next State:", next_state, "-", states[next_state])
+            print("Probability:", probability)
+            print("Reward:", reward)
+            print("Terminated:", terminated)
+            print("-" * 40)
 
-print("\nReward Function:")
-for transition, reward in rewards.items():
-    print(transition, ":", reward)
+# 8. Sample State and Action
+current_state = 1
+selected_action = 1
+
+print("\n=== SAMPLE TRANSITION ===")
+print("Current State:", current_state, "-", states[current_state])
+print("Selected Action:", selected_action, "-", actions[selected_action])
+print("Possible Outcomes:", P[current_state][selected_action])
 
 print("\nDiscount Factor:", gamma)
-
-# 8. Sample Action
-current_state = "S1"
-selected_action = "Scan"
-
-print("\nSample State:", current_state)
-print("Selected Action:", selected_action)
-print("Possible Outcomes:",
-      transitions[current_state][selected_action])
-
-print("\nMDP representation created successfully.")
+print("MDP representation created successfully.")
 ```
+
+**Note:** The dictionary includes all three actions for every state to match the structure of the supplied example. State `2` is terminal; its self-transitions are included only for structural consistency and are not intended to represent actions taken after the mission ends.
 
 ---
 
 ## Output
 
+The program prints the full dictionary in tuple format and then displays each transition's current state, action, next state, probability, reward, and termination status.
+
 ```text
 Name: ROHITH S
 Register Number: 212225240121
 
-=== LUNAR ROVER MDP ===
+=== MDP DICTIONARY ===
+P = {0: {0: [(1.0, 1, 5, False)], 1: [(1.0, 1, 0, False)], 2: [(1.0, 2, 5, True)]}, 1: {0: [(0.8, 1, 5, False), (0.2, 2, 10, True)], 1: [(0.2, 1, -1, False), (0.8, 2, 10, True)], 2: [(1.0, 2, 5, True)]}, 2: {0: [(1.0, 2, 0, True)], 1: [(1.0, 2, 0, True)], 2: [(1.0, 2, 0, True)]}}
 
-State Space:
-S0 : Rover at Base
-S1 : Exploring Unexplored Terrain
-S2 : Mission Completed
+=== TRANSITION DETAILS ===
+Current State: 0 - Rover at Base
+Action: 0 - Move
+Next State: 1 - Exploring Unexplored Terrain
+Probability: 1.0
+Reward: 5
+Terminated: False
+----------------------------------------
 
-Action Space:
-A0 : Move
-A1 : Scan
-A2 : Return
+Current State: 1 - Exploring Unexplored Terrain
+Action: 0 - Move
+Next State: 1 - Exploring Unexplored Terrain
+Probability: 0.8
+Reward: 5
+Terminated: False
+----------------------------------------
 
-Transition Probabilities:
-S0 -- Move --> S1 | Probability: 1.0
-S1 -- Scan --> S1 | Probability: 0.2
-S1 -- Scan --> S2 | Probability: 0.8
-S1 -- Return --> S2 | Probability: 1.0
+Current State: 1 - Exploring Unexplored Terrain
+Action: 0 - Move
+Next State: 2 - Mission Completed
+Probability: 0.2
+Reward: 10
+Terminated: True
+----------------------------------------
 
-Reward Function:
-('S0', 'Move', 'S1') : 5
-('S1', 'Scan', 'S1') : -1
-('S1', 'Scan', 'S2') : 10
-('S1', 'Return', 'S2') : 5
+Current State: 1 - Exploring Unexplored Terrain
+Action: 1 - Scan
+Next State: 1 - Exploring Unexplored Terrain
+Probability: 0.2
+Reward: -1
+Terminated: False
+----------------------------------------
+
+Current State: 1 - Exploring Unexplored Terrain
+Action: 1 - Scan
+Next State: 2 - Mission Completed
+Probability: 0.8
+Reward: 10
+Terminated: True
+----------------------------------------
 
 Discount Factor: 0.9
-
-Sample State: S1
-Selected Action: Scan
-Possible Outcomes: [('S1', 0.2), ('S2', 0.8)]
-
 MDP representation created successfully.
 ```
+
+*The output above shows representative transitions. Running the code prints all transitions, including those for the `Return` action and the terminal state.*
 
 ---
 
 ## Result
 
-The lunar rover exploration problem was successfully represented as a Markov Decision Process using Python dictionaries. The model contains three states, three actions, four transitions, a reward function, and a discount factor. This simplified MDP demonstrates how the rover can explore terrain, collect mapping data, and complete its mission.
+The lunar rover exploration problem was successfully represented as a Markov Decision Process using Python dictionaries. The model contains three states and three actions. Each transition specifies the probability, next state, reward, and termination status in a tuple. The program displays these values explicitly, demonstrating how the rover can explore terrain, collect mapping data, and complete its mission.
